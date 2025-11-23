@@ -128,3 +128,35 @@ dmypy.json
 # OS
 .DS_Store
 Thumbs.db
+
+# ============ SECURITY: Never commit these! ============
+# Environment files with secrets
+.env
+.env.local
+.env.*.local
+.env.production
+.env.*.prod
+
+# Credentials and keys
+*.key
+*.pem
+*.pkcs12
+secrets-*.json
+credentials.json
+aws-credentials
+gcp-credentials.json
+
+# IDE secret files
+.vscode/settings.json
+.idea/dictionaries
+.idea/shelf
+
+# Logs containing sensitive data
+*.log
+logs/
+
+# Docker overrides
+docker-compose.override.yml
+
+# Temporary credential files
+temp-credentials.json
