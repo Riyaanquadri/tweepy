@@ -67,6 +67,13 @@ class Config:
     X_API_SECRET = SecretsManager.get_secret('X_API_SECRET')
     X_ACCESS_TOKEN = SecretsManager.get_secret('X_ACCESS_TOKEN')
     X_ACCESS_SECRET = SecretsManager.get_secret('X_ACCESS_SECRET')
+    
+    # ============ OAuth2 User Context Tokens ============
+    # These are obtained via oauth_pkce.py + oauth_callback.py
+    OAUTH2_USER_ACCESS_TOKEN = SecretsManager.get_secret('OAUTH2_USER_ACCESS_TOKEN')
+    OAUTH2_USER_REFRESH_TOKEN = SecretsManager.get_secret('OAUTH2_USER_REFRESH_TOKEN')
+    OAUTH2_TOKEN_EXPIRES_IN = int(SecretsManager.get_secret('OAUTH2_TOKEN_EXPIRES_IN', '7200'))
+    OAUTH2_SCOPE = SecretsManager.get_secret('OAUTH2_SCOPE', 'tweet.read tweet.write users.read offline.access')
 
     # ============ LLM Provider Credentials ============
     LLM_PROVIDER = SecretsManager.get_secret('LLM_PROVIDER', 'openai')
