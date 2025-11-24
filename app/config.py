@@ -71,6 +71,11 @@ class Config:
     # ============ LLM Provider Credentials ============
     LLM_PROVIDER = SecretsManager.get_secret('LLM_PROVIDER', 'openai')
     OPENAI_API_KEY = SecretsManager.get_secret('OPENAI_API_KEY')
+    GROQ_API_KEY = SecretsManager.get_secret('GROQ_API_KEY')
+    GROQ_MODEL = SecretsManager.get_secret('GROQ_MODEL', 'llama-3.3-70b-versatile')
+    GROQ_BASE_URL = SecretsManager.get_secret('GROQ_BASE_URL', 'https://api.groq.com/openai/v1')
+    LLM_TEMPERATURE = float(SecretsManager.get_secret('LLM_TEMPERATURE', '0.45'))
+    LLM_MAX_TOKENS = int(SecretsManager.get_secret('LLM_MAX_TOKENS', '300'))
 
     # ============ Bot Configuration ============
     BOT_HANDLE = SecretsManager.get_secret('BOT_HANDLE', 'bot')
@@ -105,8 +110,15 @@ class Config:
         """Validate that all required secrets are configured."""
         required_keys = [
             'X_BEARER_TOKEN', 'X_API_KEY', 'X_API_SECRET',
-            'X_ACCESS_TOKEN', 'X_ACCESS_SECRET', 'OPENAI_API_KEY'
+            'X_ACCESS_TOKEN', 'X_ACCESS_SECRET'
         ]
+        
+        # Check LLM provider-specific credentials
+        if cls.LLM_PROVIDER == 'groq':
+            required_keys.append('GROQ_API_KEY')
+        else:
+            required_keys.append('OPENAI_API_KEY')
+        
         missing = [key for key in required_keys if not getattr(cls, key)]
         if missing:
             from .logger import logger

@@ -3,6 +3,10 @@
 import time
 import random
 from typing import Optional
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+from rate_limit import interruptible_sleep
 from .safety import passes_safety
 from .db import save_draft, mark_posted, mark_failed
 from .config import Config
@@ -20,7 +24,9 @@ def _backoff_try(func, *args, max_retries=5, base=1.5, **kwargs):
             logger.warning("Post attempt %s failed: %s", attempt + 1, str(e))
             if attempt == max_retries - 1:
                 raise
-            time.sleep(backoff + random.random())
+            sleep_time = backoff + random.random()
+            if not interruptible_sleep(sleep_time):
+                raise KeyboardInterrupt('Shutdown during posting backoff')
             backoff *= base
 
 def post_safe(

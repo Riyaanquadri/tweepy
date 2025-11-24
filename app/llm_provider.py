@@ -13,6 +13,7 @@ from typing import Optional
 from groq import Client
 from .config import Config
 from .logger import logger
+from .rate_limit import interruptible_sleep
 
 # Read config from env/config
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
@@ -52,7 +53,9 @@ def _call_groq_chat(messages, max_tokens=MAX_TOKENS, temperature=TEMPERATURE, re
         except Exception as e:
             logger.warning("Groq call failed (attempt %s): %s", attempt + 1, str(e))
             if attempt < retries:
-                time.sleep(backoff ** (attempt + 1))
+                sleep_time = backoff ** (attempt + 1)
+                if not interruptible_sleep(sleep_time):
+                    raise KeyboardInterrupt('Shutdown during Groq API retry')
             else:
                 logger.exception("Groq retries exhausted")
                 raise

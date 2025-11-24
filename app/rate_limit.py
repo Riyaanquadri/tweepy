@@ -6,9 +6,26 @@ Respects X-Rate-Limit-Reset header for intelligent backoff timing.
 """
 import time
 import logging
+import threading
 from typing import Callable, Any, Optional
 
 logger = logging.getLogger('crypto_ai_bot')
+
+# Global event for graceful shutdown during sleep
+_shutdown_event = threading.Event()
+
+def signal_shutdown():
+    """Signal all sleeps to wake up for shutdown."""
+    _shutdown_event.set()
+
+def interruptible_sleep(seconds: float) -> bool:
+    """
+    Sleep for specified seconds, but can be interrupted by shutdown signal.
+    
+    Returns:
+        True if sleep completed normally, False if interrupted
+    """
+    return not _shutdown_event.wait(timeout=seconds)
 
 class RateLimitException(Exception):
     """Raised when rate limit is hit and max retries exceeded."""
@@ -95,7 +112,10 @@ class RateLimitWrapper:
                     f'Rate limit hit (attempt {attempt + 1}/{max_retries}). '
                     f'Backing off for {sleep_time}s'
                 )
-                time.sleep(sleep_time)
+                if not interruptible_sleep(sleep_time):
+                    # Sleep was interrupted by shutdown signal
+                    logger.info('Rate limit backoff interrupted by shutdown')
+                    raise KeyboardInterrupt('Shutdown during rate limit backoff')
                 backoff = min(backoff * 2, RateLimitWrapper.MAX_BACKOFF)
         
         # Shouldn't reach here

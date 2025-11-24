@@ -1,8 +1,12 @@
 import signal
+import threading
 from .scheduler import BotScheduler
 from .logger import logger
 from .config import Config
 from app.src.db import init_db
+from .rate_limit import signal_shutdown
+
+stop_event = threading.Event()
 
 
 def main():
@@ -21,20 +25,24 @@ def main():
     sched = BotScheduler()
     sched.start()
 
-    def _stop(signum, frame):
+    def _stop(signum=None, frame=None):
         logger.info('Shutting down...')
-        sched.shutdown()
-        exit(0)
+        signal_shutdown()  # Wake up any rate limit sleeps
+        stop_event.set()
 
     signal.signal(signal.SIGINT, _stop)
     signal.signal(signal.SIGTERM, _stop)
 
-    # keep alive
+    # Wait until stop_event is set (Ctrl+C or external signal)
+    # Use a timeout to make the wait loop responsive to signals
     try:
-        while True:
-            signal.pause()
+        while not stop_event.is_set():
+            stop_event.wait(timeout=0.5)  # Check every 0.5 seconds
     except KeyboardInterrupt:
-        _stop(None, None)
+        logger.info('Keyboard interrupt received')
+        signal_shutdown()
+    finally:
+        sched.shutdown()
 
 if __name__ == '__main__':
     main()
